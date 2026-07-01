@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>115年單領域 OSCE 教案甄選評核系統</title>
+<style>
+  :root{
+    --navy:#0B1A3A; --navy2:#14264f; --orange:#F39220; --orange-d:#d97c0c;
+    --ink:#1b2536; --muted:#67748c; --line:#e3e8f0; --bg:#eef1f6;
+    --ok:#1f9d6b; --ok-bg:#e4f6ee; --pend:#b9772a; --pend-bg:#fdf1e1; --none:#9aa5b8; --none-bg:#eef0f4;
+    --card:#ffffff; --shadow:0 6px 22px rgba(11,26,58,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Microsoft JhengHei","微軟正黑體","PingFang TC","Noto Sans TC",sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;border:none}
+  .hidden{display:none !important}
+
+  /* ---------- LOGIN ---------- */
+  #login{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:radial-gradient(1200px 600px at 50% -10%,#16305f 0%,var(--navy) 55%,#070f23 100%);
+  }
+  .login-card{
+    width:100%;max-width:430px;background:var(--card);border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden;
+  }
+  .login-head{background:var(--navy);color:#fff;padding:30px 30px 26px;position:relative}
+  .login-head::after{content:"";position:absolute;left:0;bottom:0;width:100%;height:5px;background:var(--orange)}
+  .login-head .org{font-size:13px;letter-spacing:1px;opacity:.8;margin-bottom:8px}
+  .login-head h1{font-size:21px;line-height:1.45;font-weight:800}
+  .login-head .yr{color:var(--orange);font-weight:800}
+  .login-body{padding:28px 30px 30px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:7px}
+  .field input{
+    width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:11px;
+    font-size:15px;transition:.15s;background:#fafbfd;font-family:inherit;
+  }
+  .field input:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px rgba(243,146,32,.15)}
+  .btn-primary{
+    width:100%;background:var(--orange);color:#fff;font-weight:800;font-size:16px;
+    padding:14px;border-radius:11px;transition:.15s;margin-top:6px;
+  }
+  .btn-primary:hover{background:var(--orange-d)}
+  .login-err{color:#d23b3b;font-size:13px;font-weight:700;margin-top:12px;text-align:center;min-height:18px}
+  .login-hint{margin-top:20px;border-top:1px dashed var(--line);padding-top:16px;font-size:12px;color:var(--muted);line-height:1.7}
+  .login-hint b{color:var(--navy)}
+
+  /* ---------- APP SHELL ---------- */
+  .topbar{
+    background:var(--navy);color:#fff;padding:0 22px;height:62px;display:flex;align-items:center;
+    justify-content:space-between;position:sticky;top:0;z-index:30;box-shadow:0 2px 14px rgba(0,0,0,.18);
+  }
+  .topbar .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .topbar .logo{width:36px;height:36px;border-radius:9px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none}
+  .topbar .ttl{font-size:15px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar .ttl small{display:block;font-size:11px;font-weight:500;opacity:.72}
+  .topbar .right{display:flex;align-items:center;gap:14px;flex:none}
+  .who{font-size:13px;text-align:right;line-height:1.3}
+  .who .role{display:inline-block;background:var(--orange);color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px;margin-top:3px}
+  .who .role.admin{background:#3a6df0}
+  .btn-out{background:rgba(255,255,255,.12);color:#fff;font-size:13px;font-weight:700;padding:8px 14px;border-radius:9px}
+  .btn-out:hover{background:rgba(255,255,255,.22)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 18px 60px}
+  .page-h{margin:6px 2px 18px}
+  .page-h h2{font-size:22px;font-weight:800;color:var(--navy)}
+  .page-h p{font-size:13.5px;color:var(--muted);margin-top:5px}
+
+  /* progress strip (reviewer) */
+  .prog{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:14px;padding:16px 20px;box-shadow:var(--shadow);margin-bottom:20px}
+  .prog .bar{flex:1;height:10px;background:#e8ecf3;border-radius:20px;overflow:hidden}
+  .prog .bar > i{display:block;height:100%;background:var(--orange);transition:width .4s}
+  .prog .num{font-weight:800;color:var(--navy);font-size:14px;white-space:nowrap}
+
+  /* case cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+  .case{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border:1px solid #eef1f6}
+  .case .ch{display:flex;align-items:flex-start;gap:12px;padding:16px 16px 12px}
+  .case .no{width:40px;height:40px;border-radius:10px;background:var(--navy);color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;flex:none}
+  .case .cmeta{flex:1;min-width:0}
+  .case .cmeta h3{font-size:15.5px;font-weight:800;color:var(--ink);line-height:1.4}
+  .case .cmeta .unit{font-size:12px;color:var(--muted);margin-top:3px}
+  .pdf-ic{flex:none;width:38px;height:38px;border-radius:9px;background:#fdeedd;color:var(--orange-d);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:.15s;border:1px solid #f6dcbb}
+  .pdf-ic:hover{background:var(--orange);color:#fff}
+  .pdf-ic svg{width:20px;height:20px}
+  .case .cf{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line);background:#fafbfd}
+  .pill{font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px}
+  .pill.ok{color:var(--ok);background:var(--ok-bg)}
+  .pill.none{color:var(--none);background:var(--none-bg)}
+  .case-total{font-size:12px;color:var(--muted);font-weight:700}
+  .case-total b{color:var(--navy);font-size:15px}
+  .btn-score{background:var(--navy);color:#fff;font-size:13.5px;font-weight:800;padding:9px 18px;border-radius:9px;transition:.15s}
+  .btn-score:hover{background:var(--navy2)}
+  .btn-score.done{background:#fff;color:var(--orange-d);border:1.5px solid var(--orange)}
+
+  /* ---------- MODAL (scoring) ---------- */
+  .ov{position:fixed;inset:0;background:rgba(7,15,35,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;backdrop-filter:blur(2px)}
+  .modal{background:var(--card);border-radius:16px;width:100%;max-width:720px;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden;margin:auto}
+  .mh{background:var(--navy);color:#fff;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2}
+  .mh h3{font-size:16px;font-weight:800;line-height:1.4}
+  .mh h3 span{display:block;font-size:12px;font-weight:500;opacity:.75;margin-top:3px}
+  .mh .x{background:rgba(255,255,255,.14);color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;flex:none}
+  .mh .x:hover{background:rgba(255,255,255,.26)}
+  .mb{padding:8px 22px 4px;max-height:none}
+  .grp{margin:16px 0}
+  .grp-h{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .grp-h .gname{font-size:14px;font-weight:800;color:var(--navy)}
+  .grp-h .gw{font-size:11px;font-weight:800;color:var(--orange-d);background:#fdeedd;padding:2px 9px;border-radius:20px}
+  .item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}
+  .item .lab{flex:1;font-size:13.5px;line-height:1.55;color:var(--ink)}
+  .item .lab .mx{font-size:11px;color:var(--muted);font-weight:700;margin-left:6px}
+  .score-in{width:74px;flex:none}
+  .score-in input{width:100%;text-align:center;padding:9px 6px;border:1.5px solid var(--line);border-radius:9px;font-size:16px;font-weight:800;color:var(--navy);background:#fafbfd}
+  .score-in input:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px rgba(243,146,32,.15)}
+  .score-in input.bad{border-color:#e0b4b4;background:#fdf2f2}
+  .bonus-grp{background:#fdf8f0;border:1px solid #f6dcbb;border-radius:12px;padding:6px 16px 14px;margin:18px 0}
+  .cmt{margin:6px 0 18px}
+  .cmt label{display:block;font-size:13px;font-weight:800;color:var(--navy);margin-bottom:7px}
+  .cmt textarea{width:100%;min-height:80px;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:14px;font-family:inherit;resize:vertical;background:#fafbfd;line-height:1.6}
+  .cmt textarea:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px rgba(243,146,32,.15)}
+  .mf{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .mf .tot{font-size:13px;color:var(--muted);font-weight:700}
+  .mf .tot b{font-size:22px;color:var(--orange-d);font-weight:800}
+  .mf .tot b.over{color:#d23b3b}
+  .mf .acts{display:flex;gap:10px}
+  .btn-ghost{background:#eef1f6;color:var(--navy);font-weight:800;font-size:14px;padding:11px 18px;border-radius:10px}
+  .btn-ghost:hover{background:#e2e7f0}
+  .btn-save{background:var(--orange);color:#fff;font-weight:800;font-size:14px;padding:11px 24px;border-radius:10px}
+  .btn-save:hover{background:var(--orange-d)}
+
+  /* split modal: 左教案 PDF / 右評分 */
+  .ov-wide{align-items:center;padding:16px}
+  .modal-split{max-width:1240px;width:100%;height:92vh;display:flex;flex-direction:column}
+  .modal-split .mh{flex:none}
+  .open-new{color:#ffd9a8;font-size:12.5px;font-weight:700;text-decoration:none;background:rgba(255,255,255,.12);padding:6px 11px;border-radius:8px;white-space:nowrap}
+  .open-new:hover{background:rgba(255,255,255,.24)}
+  .split{flex:1;display:flex;min-height:0}
+  .pdf-pane{flex:1.3;min-width:0;background:#33373f;display:flex;align-items:center;justify-content:center;position:relative}
+  .pdf-pane iframe{width:100%;height:100%;border:0;display:block}
+  .pdf-empty{color:#c7cedd;text-align:center;font-size:13.5px;line-height:1.9;padding:30px}
+  .pdf-empty svg{width:48px;height:48px;opacity:.45;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto}
+  .score-pane{flex:1;min-width:330px;max-width:470px;display:flex;flex-direction:column;background:#fff;border-left:1px solid var(--line);min-height:0}
+  .score-scroll{flex:1;overflow-y:auto;padding:4px 20px 6px}
+  .score-pane .mf{position:static;flex:none}
+  @media(max-width:860px){
+    .ov-wide{padding:0}
+    .modal-split{height:100vh;max-width:100%;border-radius:0}
+    .split{flex-direction:column}
+    .pdf-pane{flex:none;height:44vh}
+    .score-pane{max-width:none;min-width:0;border-left:none;border-top:1px solid var(--line)}
+  }
+
+  /* ---------- ADMIN ---------- */
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+  .stat{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;border-left:5px solid var(--orange)}
+  .stat .k{font-size:12px;color:var(--muted);font-weight:700}
+  .stat .v{font-size:28px;font-weight:800;color:var(--navy);margin-top:4px;line-height:1}
+  .stat .v small{font-size:14px;color:var(--muted);font-weight:700}
+  .panel{background:var(--card);border-radius:14px;box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .panel-h h3{font-size:16px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:9px}
+  .panel-h h3 .dot{width:9px;height:20px;background:var(--orange);border-radius:3px}
+  .tbl-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+  th,td{padding:12px 12px;text-align:center;border-bottom:1px solid var(--line)}
+  th{background:#f6f8fc;color:var(--navy);font-weight:800;font-size:12.5px;white-space:nowrap}
+  td.tl,th.tl{text-align:left}
+  tbody tr:hover{background:#fafbff}
+  .rank-b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-weight:800;font-size:14px;background:#eef1f6;color:var(--navy)}
+  .rank-b.r1{background:#f7d774;color:#7a5800}
+  .rank-b.r2{background:#d9e0ea;color:#475066}
+  .rank-b.r3{background:#f0c8a0;color:#7d4f23}
+  .s-ok{color:var(--ok);font-weight:800}
+  .s-no{color:var(--none);font-weight:700}
+  .cellscore{font-weight:800;color:var(--navy)}
+  .cellscore .sub{display:block;font-size:11px;font-weight:700;margin-top:2px}
+  .avg-big{font-weight:800;color:var(--orange-d);font-size:16px}
+  .title-cell{font-weight:800;color:var(--ink)}
+  .title-cell small{display:block;font-weight:600;color:var(--muted);font-size:11px;margin-top:2px}
+  .btn-mini{background:var(--navy);color:#fff;font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:8px}
+  .btn-mini:hover{background:var(--navy2)}
+  .btn-mini.ghost{background:#eef1f6;color:var(--navy)}
+  .btn-mini.ghost:hover{background:#e2e7f0}
+  .detail-row td{background:#fafbff;text-align:left;padding:0}
+  .detail-inner{padding:14px 18px}
+  .rev-block{margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+  .rev-block:last-child{border:none;margin:0;padding:0}
+  .rev-block .rn{font-weight:800;color:var(--navy);font-size:13.5px;margin-bottom:6px}
+  .rev-block .rn .badge{font-weight:700;font-size:11px;margin-left:8px;padding:2px 9px;border-radius:20px}
+  .rev-block .scoreline{font-size:12.5px;color:var(--muted);line-height:1.7}
+  .rev-block .scoreline b{color:var(--navy)}
+  .rev-block .cm{font-size:12.5px;color:var(--ink);margin-top:5px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px;line-height:1.6}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.7;background:#fff7ec;border:1px solid #f6dcbb;border-radius:10px;padding:12px 15px;margin-bottom:20px}
+  .note b{color:var(--orange-d)}
+
+  @media(max-width:560px){
+    .topbar .ttl small{display:none}
+    .grid{grid-template-columns:1fr}
+    .mf{flex-direction:column;align-items:stretch}
+    .mf .acts{justify-content:stretch}.mf .acts button{flex:1}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="org" id="lg-org">奇美醫院 教學部 臨床技能中心</div>
+      <h1><span class="yr">115 年</span> 單領域 OSCE<br>教案甄選評核系統</h1>
+    </div>
+    <div class="login-body">
+      <div class="field">
+        <label>帳號</label>
+        <input id="lg-user" type="text" autocomplete="username" placeholder="請輸入帳號">
+      </div>
+      <div class="field">
+        <label>密碼</label>
+        <input id="lg-pass" type="password" autocomplete="current-password" placeholder="請輸入密碼">
+      </div>
+      <button class="btn-primary" id="lg-btn">登　入</button>
+      <div class="login-err" id="lg-err"></div>
+      <div class="login-hint">
+        <b>預設測試帳號（請上線前修改）：</b><br>
+        管理者　 admin / admin123<br>
+        委員一　 reviewer1 / chi001（柯雅婷 督導）<br>
+        委員二　 reviewer2 / chi002（劉韋呈 醫師）<br>
+        委員三　 reviewer3 / chi003（蔡長志 主任）
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">OSCE</div>
+      <div class="ttl">115 單領域 OSCE 教案甄選評核系統<small id="tb-org">奇美醫院 教學部 臨床技能中心</small></div>
+    </div>
+    <div class="right">
+      <div class="who"><span id="tb-name"></span><br><span class="role" id="tb-role"></span></div>
+      <button class="btn-out" id="btn-logout">登出</button>
+    </div>
+  </div>
+  <div class="wrap" id="view"></div>
+</div>
+
+<!-- modal mount -->
+<div id="modal-mount"></div>
+
+<script>
+/* =====================================================================
+   設定區（CONFIG）— 上線前在這裡修改即可
+   ===================================================================== */
+const CONFIG = {
+  org: "奇美醫院 教學部 臨床技能中心",
+
+  /* ---- 帳號密碼（預設，後續自行修改）---- */
+  accounts: {
+    admin:     { password:"admin123", role:"admin",    name:"管理者" },
+    reviewer1: { password:"chi001",   role:"reviewer", name:"柯雅婷 督導" },
+    reviewer2: { password:"chi002",   role:"reviewer", name:"劉韋呈 醫師" },
+    reviewer3: { password:"chi003",   role:"reviewer", name:"蔡長志 主任" },
+  },
+
+  /* ---- 8 案教案 ----
+     pdfUrl：直接貼 Google Drive 的「共用連結」即可，系統會自動轉成可內嵌的 /preview 形式。
+     例： "https://drive.google.com/file/d/1AbCdEfG.../view?usp=sharing"
+     （該檔案共用權限需設為「知道連結的人皆可檢視」）。尚未取得連結前留 "#" 即可。 */
+  cases: [
+    { id:1, title:"吞不下去好沮喪", unit:"復健部－語言治療", pdfUrl:"#" },
+    { id:2, title:"Flo-trac 血流動力學監測系統儀器操作及數據判讀", unit:"護理部－3BICU", pdfUrl:"#" },
+    { id:3, title:"非器質性聽力損失", unit:"耳鼻喉部－聽力", pdfUrl:"#" },
+    { id:4, title:"6 個月大男童，發燒 3 天，精神倦怠，由阿嬤送至急診", unit:"西醫－兒科部", pdfUrl:"#" },
+    { id:5, title:"使用 BiPAP 病人的評估與照護", unit:"急診室", pdfUrl:"#" },
+    { id:6, title:"齒源性頭頸部感染之診斷與切開引流", unit:"牙醫部", pdfUrl:"#" },
+    { id:7, title:"幽門桿菌糞便抗原快篩的操作與判讀", unit:"臨床病理部", pdfUrl:"#" },
+    { id:8, title:"異常陰道出血且長期月經不規則", unit:"婦產部", pdfUrl:"#" },
+  ],
+
+  /* ---- 評分項目（依 Excel 甄選表，每項 10 分，合計 100 + 加分 10）---- */
+  groups: [
+    { name:"情境設置", weight:"10%", items:[
+      { key:"c1", label:"包含告示牌、配置圖、技能操作題包含道具清單並與現場一致", max:10 },
+    ]},
+    { name:"教案指引", weight:"40%", items:[
+      { key:"c2", label:"教師/考官指引應包含學習目標，教師/考官評分說明語意清楚", max:10 },
+      { key:"c3", label:"考生指引清楚表達／足以輔助考生執行的任務", max:10 },
+      { key:"c4", label:"SP（劇本）/助教指引能引導出考生應被評估之項目", max:10 },
+      { key:"c5", label:"適當運用教材／資源", max:10 },
+    ]},
+    { name:"評分設計", weight:"40%", items:[
+      { key:"c6", label:"評分項目與教學目標能相對應", max:10 },
+      { key:"c7", label:"評量項目能與學習目標相對應", max:10 },
+      { key:"c8", label:"評分表尺標與給分定義明確", max:10 },
+      { key:"c9", label:"評分項目說明語意清楚", max:10 },
+    ]},
+    { name:"教案目標明確一致", weight:"10%", items:[
+      { key:"c10", label:"教師/考官、考生、SP/助教之教案內容及教材結構之完整性、指引目標一致", max:10 },
+    ]},
+  ],
+  bonus: { key:"bonus", label:"優良加分（特殊優良表現，請於評審意見欄說明）", max:10 },
+
+  /* ---- Google Sheet 串接 ----
+     部署 Apps Script 網頁應用程式後，把 .../exec 網址貼在這裡即啟用雲端模式。
+     留空＝本機測試模式（用上面的 accounts 帳號、資料存於瀏覽器）。 */
+  apiUrl: "https://script.google.com/macros/s/AKfycbztWVhD8B-kYpRd_ULH-yyhgFIqOx1OjBDpreYbb2VWXzH95caS4g2ghvTTWIm7WiA2/exec",
+};
+
+/* 所有評分項 key（含加分）— 自動展開 */
+const ITEM_KEYS = [...CONFIG.groups.flatMap(g=>g.items.map(i=>i.key)), CONFIG.bonus.key];
+const BASE_KEYS = CONFIG.groups.flatMap(g=>g.items.map(i=>i.key));
+const ITEM_DEF  = {};
+CONFIG.groups.forEach(g=>g.items.forEach(i=>ITEM_DEF[i.key]=i));
+ITEM_DEF[CONFIG.bonus.key]=CONFIG.bonus;
+
+/* =====================================================================
+   資料儲存層（localStorage；若不可用則退回記憶體，預覽環境也能跑）
+   結構： scores[username][caseId] = { c1..c10, bonus, comment, submitted, updatedAt }
+   ===================================================================== */
+const STORE_KEY = "osce_selection_v1";
+const Store = (()=>{
+  let mem = {};
+  let useLS = false;
+  try{ const t="__t"; localStorage.setItem(t,"1"); localStorage.removeItem(t); useLS=true; }catch(e){ useLS=false; }
+  function read(){
+    if(useLS){ try{ return JSON.parse(localStorage.getItem(STORE_KEY))||{}; }catch(e){ return {}; } }
+    return mem;
+  }
+  function write(o){
+    if(useLS){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(o)); }catch(e){} }
+    else { mem = o; }
+  }
+  return {
+    getAll: read,
+    getReviewer(u){ const a=read(); return a[u]||{}; },
+    getCase(u,cid){ const a=read(); return (a[u]&&a[u][cid])||null; },
+    saveCase(u,cid,data){
+      const a=read(); if(!a[u]) a[u]={}; a[u][cid]={...data, updatedAt:new Date().toISOString()};
+      write(a); return a[u][cid];
+    }
+  };
+})();
+
+/* =====================================================================
+   雲端 API（Apps Script）+ 統一資料層 DATA
+   - CONFIG.apiUrl 有填 → 雲端模式：登入/讀取/儲存都經由 Google Sheet
+   - CONFIG.apiUrl 留空 → 本機模式：用 CONFIG.accounts + localStorage（Store）
+   ===================================================================== */
+const CLOUD = !!CONFIG.apiUrl;
+
+function api(payload){
+  // 以 JSONP（<script> 載入）呼叫 Apps Script，完全不受 CORS 限制
+  return new Promise((resolve, reject)=>{
+    const cb = "__osce_cb_" + Date.now() + "_" + Math.floor(Math.random()*1e6);
+    const s = document.createElement("script");
+    let done = false;
+    const timer = setTimeout(()=>{ if(!done){ cleanup(); const e=new Error("network"); e.kind="network"; reject(e); } }, 20000);
+    function cleanup(){ done=true; clearTimeout(timer); try{ delete window[cb]; }catch(_){ window[cb]=undefined; } if(s.parentNode) s.parentNode.removeChild(s); }
+    window[cb] = (data)=>{ if(done) return; cleanup(); resolve(data); };
+    s.onerror = ()=>{ if(!done){ cleanup(); const e=new Error("network"); e.kind="network"; reject(e); } };
+    s.src = CONFIG.apiUrl + "?callback=" + cb + "&payload=" + encodeURIComponent(JSON.stringify(payload)) + "&t=" + Date.now();
+    document.head.appendChild(s);
+  });
+}
+
+/* 雲端模式的記憶體快取，結構與 Store 相同：cache[username][caseId]=rec */
+const DATA = {
+  cache: {},
+  getAll(){ return CLOUD ? this.cache : Store.getAll(); },
+  getReviewer(u){ const a=this.getAll(); return a[u]||{}; },
+  getCase(u,cid){ const a=this.getAll(); return (a[u]&&a[u][cid])||null; },
+  // 將 API 回傳的列陣列灌入快取
+  loadRows(rows){
+    const c={};
+    (rows||[]).forEach(r=>{
+      if(!c[r.username]) c[r.username]={};
+      c[r.username][r.caseId] = { ...r.scores, bonus:r.bonus, comment:r.comment, submitted:true, updatedAt:r.updatedAt };
+    });
+    this.cache = c;
+  }
+};
+
+/* 依身分向雲端拉取資料（委員只會拿到自己的；管理者拿全部）*/
+async function refreshCloud(){
+  if(!CLOUD) return;
+  const res = await api({ action:"load", username:SESSION.username, password:SESSION.password });
+  if(res && res.ok){ DATA.loadRows(res.rows); if(res.reviewers) ROSTER = res.reviewers; }
+}
+
+/* =====================================================================
+   工具
+   ===================================================================== */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function baseSum(rec){ return BASE_KEYS.reduce((a,k)=>a+(Number(rec?.[k])||0),0); }
+function totalScore(rec){ return baseSum(rec) + (Number(rec?.[CONFIG.bonus.key])||0); }
+function fmt(n){ return Number.isInteger(n)? n : (Math.round(n*10)/10); }
+
+/* 將 Google Drive 共用連結轉成可內嵌的 /preview 網址（其他直連網址原樣回傳） */
+function toEmbedUrl(url){
+  if(!url || url==="#") return null;
+  let m = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+  if(m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  m = url.match(/[?&]id=([^&]+)/);
+  if(m && url.includes("google")) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  return url; // 已是 preview 或一般可內嵌之 PDF 直連
+}
+
+let SESSION = null; // {username, role, name, password}
+
+/* =====================================================================
+   登入
+   ===================================================================== */
+$("#lg-org").textContent = CONFIG.org;
+$("#tb-org").textContent = CONFIG.org;
+async function doLogin(){
+  const u = $("#lg-user").value.trim();
+  const p = $("#lg-pass").value;
+  const btn = $("#lg-btn");
+
+  if(CLOUD){
+    btn.disabled = true; btn.textContent = "登入中…"; $("#lg-err").textContent="";
+    try{
+      const res = await api({ action:"login", username:u, password:p });
+      if(!res || !res.ok){ $("#lg-err").textContent = (res&&res.error) || "帳號或密碼錯誤，請重新輸入。"; return; }
+      SESSION = { username:res.username, role:res.role, name:res.name, password:p };
+      enterApp(res.name, res.role);
+      $("#view").innerHTML = `<div class="page-h"><h2>資料載入中…</h2></div>`;
+      await refreshCloud();
+      render();
+    }catch(err){
+      $("#lg-err").textContent = "連線逾時或失敗。請確認：①用瀏覽器開啟本檔（勿在對話預覽視窗測試）②部署權限為「所有人」、執行身分為「我」③已重新部署最新版本。";
+    }finally{
+      btn.disabled = false; btn.textContent = "登　入";
+    }
+    return;
+  }
+
+  // 本機模式
+  const acc = CONFIG.accounts[u];
+  if(!acc || acc.password!==p){ $("#lg-err").textContent="帳號或密碼錯誤，請重新輸入。"; return; }
+  SESSION = { username:u, role:acc.role, name:acc.name, password:p };
+  enterApp(acc.name, acc.role);
+  render();
+}
+
+function enterApp(name, role){
+  $("#lg-err").textContent=""; $("#lg-pass").value="";
+  $("#login").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+  $("#tb-name").textContent = name;
+  const rl=$("#tb-role"); rl.textContent = role==="admin"?"管理者":"評審委員";
+  rl.className = "role"+(role==="admin"?" admin":"");
+}
+$("#lg-btn").addEventListener("click", doLogin);
+$("#lg-pass").addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); });
+$("#lg-user").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#lg-pass").focus(); });
+$("#btn-logout").addEventListener("click", ()=>{
+  SESSION=null; $("#app").classList.add("hidden"); $("#login").classList.remove("hidden");
+  $("#lg-user").value=""; $("#view").innerHTML="";
+});
+
+/* =====================================================================
+   渲染分流
+   ===================================================================== */
+function render(){
+  if(!SESSION) return;
+  if(SESSION.role==="admin") renderAdmin();
+  else renderReviewer();
+}
+
+/* ---------------- 委員（reviewer）視圖 ---------------- */
+function renderReviewer(){
+  const mine = DATA.getReviewer(SESSION.username);
+  const done = CONFIG.cases.filter(c=>mine[c.id]&&mine[c.id].submitted).length;
+  const total = CONFIG.cases.length;
+  const pct = Math.round(done/total*100);
+
+  let cards = CONFIG.cases.map(c=>{
+    const rec = mine[c.id];
+    const submitted = rec && rec.submitted;
+    const tot = submitted ? totalScore(rec) : null;
+    const pdf = c.pdfUrl && c.pdfUrl!=="#";
+    return `
+    <div class="case">
+      <div class="ch">
+        <div class="no">${c.id}</div>
+        <div class="cmeta">
+          <h3>${esc(c.title)}</h3>
+          ${c.unit?`<div class="unit">${esc(c.unit)}</div>`:``}
+        </div>
+        <a class="pdf-ic" title="${pdf?'開啟教案 PDF':'尚未設定教案連結'}" href="${pdf?esc(c.pdfUrl):'javascript:void(0)'}" ${pdf?'target="_blank" rel="noopener"':''} ${pdf?'':'onclick="alert(\'此教案尚未設定雲端連結，請管理者於設定區填入 pdfUrl。\')"'}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        </a>
+      </div>
+      <div class="cf">
+        ${submitted
+          ? `<span class="case-total">已評總分 <b>${fmt(tot)}</b><small>/110</small></span>`
+          : `<span class="pill none">尚未評分</span>`}
+        <button class="btn-score ${submitted?'done':''}" onclick="openScore(${c.id})">${submitted?'檢視 / 修改':'開始評分'}</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  $("#view").innerHTML = `
+    <div class="page-h">
+      <h2>教案評分</h2>
+      <p>${esc(SESSION.name)}，您好。請逐案點選教案 PDF 詳閱後評分；您僅能檢視與修改自己的評分，無法看到其他委員的分數。</p>
+    </div>
+    <div class="prog">
+      <span class="num">完成進度</span>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <span class="num">${done} / ${total} 案（${pct}%）</span>
+    </div>
+    <div class="grid">${cards}</div>
+  `;
+}
+
+/* ---------------- 評分 Modal ---------------- */
+window.openScore = function(cid){
+  const c = CONFIG.cases.find(x=>x.id===cid);
+  const rec = DATA.getCase(SESSION.username, cid) || {};
+  const embed = toEmbedUrl(c.pdfUrl);
+
+  const groupsHtml = CONFIG.groups.map(g=>`
+    <div class="grp">
+      <div class="grp-h"><span class="gname">${esc(g.name)}</span><span class="gw">${g.weight}</span></div>
+      ${g.items.map(it=>`
+        <div class="item">
+          <div class="lab">${esc(it.label)}<span class="mx">（0–${it.max}）</span></div>
+          <div class="score-in"><input type="number" min="0" max="${it.max}" step="0.5" data-key="${it.key}" value="${rec[it.key]??''}" placeholder="0" oninput="recalc()"></div>
+        </div>`).join("")}
+    </div>`).join("");
+
+  const b = CONFIG.bonus;
+  const bonusHtml = `
+    <div class="bonus-grp">
+      <div class="grp-h" style="margin-top:10px"><span class="gname">優良加分</span><span class="gw">最高 ${b.max}</span></div>
+      <div class="item" style="border:none">
+        <div class="lab">${esc(b.label)}</div>
+        <div class="score-in"><input type="number" min="0" max="${b.max}" step="0.5" data-key="${b.key}" value="${rec[b.key]??''}" placeholder="0" oninput="recalc()"></div>
+      </div>
+    </div>`;
+
+  const pdfPane = embed
+    ? `<iframe src="${esc(embed)}" title="教案 PDF" allow="autoplay"></iframe>`
+    : `<div class="pdf-empty">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+         此教案尚未設定雲端連結<br>請管理者於設定區的 <b style="color:#ffd9a8">cases.pdfUrl</b> 填入<br>Google Drive 共用連結
+       </div>`;
+
+  $("#modal-mount").innerHTML = `
+    <div class="ov ov-wide" id="ov">
+      <div class="modal modal-split">
+        <div class="mh">
+          <h3>第 ${c.id} 案　<span style="display:inline;opacity:.7;font-weight:500">${esc(c.unit||'')}</span>
+            <span>${esc(c.title)}</span></h3>
+          <div style="display:flex;align-items:center;gap:10px">
+            ${embed?`<a href="${esc(c.pdfUrl)}" target="_blank" rel="noopener" class="open-new" title="在新分頁開啟教案">↗ 開新分頁</a>`:''}
+            <button class="x" onclick="closeScore()">×</button>
+          </div>
+        </div>
+        <div class="split">
+          <div class="pdf-pane">${pdfPane}</div>
+          <div class="score-pane">
+            <div class="score-scroll">
+              ${groupsHtml}
+              ${bonusHtml}
+              <div class="cmt">
+                <label>評審意見 / 優良表現說明</label>
+                <textarea id="cmt" placeholder="請填寫評語、優良或建議事項…">${esc(rec.comment||'')}</textarea>
+              </div>
+            </div>
+            <div class="mf">
+              <div class="tot">合計 <b id="m-tot">0</b><span style="font-size:13px;color:var(--muted)"> / 110</span></div>
+              <div class="acts">
+                <button class="btn-ghost" onclick="closeScore()">取消</button>
+                <button class="btn-save" onclick="saveScore(${c.id})">儲存評分</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  recalc();
+  document.body.style.overflow="hidden";
+};
+window.closeScore = function(){ $("#modal-mount").innerHTML=""; document.body.style.overflow=""; };
+window.recalc = function(){
+  let sum=0, over=false;
+  document.querySelectorAll('#ov input[type=number]').forEach(inp=>{
+    const k=inp.dataset.key, max=ITEM_DEF[k].max;
+    let v=parseFloat(inp.value);
+    if(isNaN(v)) v=0;
+    if(v<0||v>max){ inp.classList.add('bad'); over=true; } else inp.classList.remove('bad');
+    sum+=v;
+  });
+  const el=$("#m-tot"); if(el){ el.textContent=fmt(sum); el.classList.toggle('over',over); }
+};
+window.saveScore = async function(cid){
+  const data={}; let bad=false;
+  document.querySelectorAll('#ov input[type=number]').forEach(inp=>{
+    const k=inp.dataset.key, max=ITEM_DEF[k].max;
+    let v=parseFloat(inp.value); if(isNaN(v)) v=0;
+    if(v<0||v>max) bad=true;
+    data[k]=v;
+  });
+  if(bad){ alert("有評分超出該項目允許範圍，請修正後再儲存。"); return; }
+  data.comment = $("#cmt").value.trim();
+  data.submitted = true;
+
+  const saveBtn = document.querySelector('#ov .btn-save');
+
+  if(CLOUD){
+    if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent="儲存中…"; }
+    const c = CONFIG.cases.find(x=>x.id===cid);
+    const scores={}; BASE_KEYS.forEach(k=>scores[k]=data[k]);
+    try{
+      const res = await api({
+        action:"save", username:SESSION.username, password:SESSION.password,
+        caseId:cid, title:c.title, scores, bonus:data[CONFIG.bonus.key]||0, comment:data.comment
+      });
+      if(!res || !res.ok){ alert("儲存失敗："+((res&&res.error)||"未知錯誤")); if(saveBtn){saveBtn.disabled=false;saveBtn.textContent="儲存評分";} return; }
+      // 更新快取
+      if(!DATA.cache[SESSION.username]) DATA.cache[SESSION.username]={};
+      DATA.cache[SESSION.username][cid]={...data, updatedAt:new Date().toISOString()};
+    }catch(err){
+      alert("無法連線到伺服器，請稍後再試。"); if(saveBtn){saveBtn.disabled=false;saveBtn.textContent="儲存評分";} return;
+    }
+    closeScore(); render(); return;
+  }
+
+  // 本機模式
+  Store.saveCase(SESSION.username, cid, data);
+  closeScore();
+  render();
+};
+
+/* 委員名冊：雲端模式用 Sheet 權限分頁回傳的名單，本機模式用 CONFIG.accounts */
+let ROSTER = null;
+function reviewerList(){
+  if(CLOUD && ROSTER) return ROSTER;
+  return Object.entries(CONFIG.accounts)
+    .filter(([u,a])=>a.role==="reviewer").map(([u,a])=>({username:u, name:a.name}));
+}
+
+/* ---------------- 管理者（admin）視圖 ---------------- */
+function renderAdmin(){
+  const all = DATA.getAll();
+  const reviewers = reviewerList();
+
+  // 每案：各委員紀錄 + 平均
+  const rows = CONFIG.cases.map(c=>{
+    const per = reviewers.map(r=>{
+      const rec = (all[r.username]&&all[r.username][c.id]) || null;
+      return { ...r, rec, done: !!(rec&&rec.submitted), total: rec&&rec.submitted? totalScore(rec):null };
+    });
+    const subs = per.filter(p=>p.done);
+    const avg = subs.length? subs.reduce((a,p)=>a+p.total,0)/subs.length : null;
+    return { c, per, subs:subs.length, avg };
+  });
+
+  // 排名（依平均；全部委員都評完才正式計名次，未完成者排於後）
+  const ranked = [...rows].sort((a,b)=>{
+    const fa=a.subs===reviewers.length, fb=b.subs===reviewers.length;
+    if(fa!==fb) return fa? -1:1;
+    return (b.avg??-1)-(a.avg??-1);
+  });
+  const rankMap={}; ranked.forEach((r,i)=>{ rankMap[r.c.id]= (r.subs===reviewers.length)? i+1 : null; });
+
+  // 統計
+  const totalCells = CONFIG.cases.length*reviewers.length;
+  const doneCells = rows.reduce((a,r)=>a+r.subs,0);
+  const fullyDone = rows.filter(r=>r.subs===reviewers.length).length;
+  const perReviewerDone = reviewers.map(r=>{
+    const cnt = CONFIG.cases.filter(c=>all[r.username]&&all[r.username][c.id]&&all[r.username][c.id].submitted).length;
+    return {...r, cnt};
+  });
+
+  // 委員進度表
+  const revProgress = perReviewerDone.map(r=>{
+    const pct=Math.round(r.cnt/CONFIG.cases.length*100);
+    return `<tr>
+      <td class="tl"><span class="title-cell">${esc(r.name)}</span></td>
+      <td>${r.cnt} / ${CONFIG.cases.length}</td>
+      <td><div class="bar" style="height:9px;background:#e8ecf3;border-radius:20px;overflow:hidden;min-width:120px"><i style="display:block;height:100%;width:${pct}%;background:var(--orange)"></i></div></td>
+      <td>${r.cnt===CONFIG.cases.length?'<span class="s-ok">已完成</span>':'<span class="s-no">進行中</span>'}</td>
+    </tr>`;
+  }).join("");
+
+  // 狀態 + 分數矩陣
+  const head = `<th class="tl">編號 / 教案題目</th>` +
+    reviewers.map(r=>`<th>${esc(r.name)}</th>`).join("") +
+    `<th>平均總分</th><th>名次</th><th></th>`;
+
+  const body = rows.map(r=>{
+    const cells = r.per.map(p=>{
+      if(p.done) return `<td><span class="cellscore">${fmt(p.total)}<span class="sub s-ok">已評</span></span></td>`;
+      return `<td><span class="s-no">未評</span></td>`;
+    }).join("");
+    const rk = rankMap[r.c.id];
+    const rkHtml = rk? `<span class="rank-b ${rk<=3?'r'+rk:''}">${rk}</span>` : `<span class="s-no">—</span>`;
+    const avgHtml = r.avg!=null? `<span class="avg-big">${fmt(r.avg)}</span>` : `<span class="s-no">—</span>`;
+    return `<tr>
+      <td class="tl"><span class="title-cell">第 ${r.c.id} 案<small>${esc(r.c.title)}</small></span></td>
+      ${cells}
+      <td>${avgHtml}<div style="font-size:11px;color:var(--muted);margin-top:2px">${r.subs}/${reviewers.length} 已評</div></td>
+      <td>${rkHtml}</td>
+      <td><button class="btn-mini ghost" onclick="toggleDetail(${r.c.id})">明細</button></td>
+    </tr>
+    <tr class="detail-row hidden" id="dt-${r.c.id}"><td colspan="${reviewers.length+4}">${detailHtml(r)}</td></tr>`;
+  }).join("");
+
+  // 正式排名表（依平均）
+  const rankRows = ranked.map((r,i)=>{
+    const rk = rankMap[r.c.id];
+    return `<tr>
+      <td>${rk?`<span class="rank-b ${rk<=3?'r'+rk:''}">${rk}</span>`:'<span class="s-no">未完成</span>'}</td>
+      <td class="tl"><span class="title-cell">第 ${r.c.id} 案<small>${esc(r.c.title)}</small></span></td>
+      <td>${r.avg!=null?`<b style="color:var(--navy);font-size:15px">${fmt(r.avg)}</b> <small style="color:var(--muted)">/110</small>`:'<span class="s-no">—</span>'}</td>
+      ${r.per.map(p=>`<td>${p.done?fmt(p.total):'<span class="s-no">—</span>'}</td>`).join("")}
+      <td>${r.subs}/${reviewers.length}</td>
+    </tr>`;
+  }).join("");
+
+  $("#view").innerHTML = `
+    <div class="page-h">
+      <h2>管理者後台</h2>
+      <p>檢視三位委員的評核狀態、各案總分與排名。${CONFIG.apiUrl?'（雲端模式：資料存於 Google Sheet）':'（本機測試模式：資料暫存於瀏覽器）'}</p>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="k">教案總數</div><div class="v">${CONFIG.cases.length}<small> 案</small></div></div>
+      <div class="stat"><div class="k">評審委員</div><div class="v">${reviewers.length}<small> 位</small></div></div>
+      <div class="stat"><div class="k">評核完成度</div><div class="v">${doneCells}<small> / ${totalCells} 格</small></div></div>
+      <div class="stat"><div class="k">三委員皆完成</div><div class="v">${fullyDone}<small> / ${CONFIG.cases.length} 案</small></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><h3><span class="dot"></span>委員評核進度</h3></div>
+      <div class="tbl-scroll"><table style="min-width:520px">
+        <thead><tr><th class="tl">委員</th><th>已評案數</th><th>進度</th><th>狀態</th></tr></thead>
+        <tbody>${revProgress}</tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">
+        <h3><span class="dot"></span>各案評核狀態與分數</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn-mini ghost" onclick="exportCSV()">匯出 CSV</button>
+          <button class="btn-mini" onclick="adminRefresh()">重新整理</button>
+        </div>
+      </div>
+      <div class="tbl-scroll"><table>
+        <thead><tr>${head}</tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><h3><span class="dot"></span>教案排名（依三委員平均總分）</h3></div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>名次</th><th class="tl">教案</th><th>平均總分</th>${reviewers.map(r=>`<th>${esc(r.name)}</th>`).join("")}<th>完成</th></tr></thead>
+        <tbody>${rankRows}</tbody>
+      </table></div>
+    </div>
+
+    <div class="note">
+      <b>排名規則：</b>以三位委員「總分平均」由高到低排序；尚未三位委員全部評完的教案，暫不列入正式名次（顯示「—」），待全部評核完成後即自動計算。匯出 CSV 可作為呈核或上傳 Google Sheet 之用。
+    </div>
+  `;
+}
+
+function detailHtml(r){
+  return `<div class="detail-inner">` + r.per.map(p=>{
+    if(!p.done) return `<div class="rev-block"><div class="rn">${esc(p.name)} <span class="badge s-no" style="background:var(--none-bg)">尚未評分</span></div></div>`;
+    const rec=p.rec;
+    const items = BASE_KEYS.map(k=>`${esc(ITEM_DEF[k].label).slice(0,10)}… <b>${rec[k]??0}</b>`).join("　");
+    return `<div class="rev-block">
+      <div class="rn">${esc(p.name)} <span class="badge s-ok" style="background:var(--ok-bg)">已評　總分 ${fmt(totalScore(rec))}/110</span></div>
+      <div class="scoreline">基本分 <b>${fmt(baseSum(rec))}</b>／100　加分 <b>${fmt(rec[CONFIG.bonus.key]||0)}</b>／10</div>
+      ${rec.comment?`<div class="cm">評審意見：${esc(rec.comment)}</div>`:''}
+    </div>`;
+  }).join("") + `</div>`;
+}
+window.toggleDetail = function(cid){ $("#dt-"+cid).classList.toggle("hidden"); };
+window.adminRefresh = async function(){
+  if(CLOUD){ await refreshCloud(); }
+  render();
+};
+
+/* ---------------- 匯出 CSV ---------------- */
+window.exportCSV = function(){
+  const all = DATA.getAll();
+  const reviewers = reviewerList();
+  const head = ["編號","教案題目", ...reviewers.flatMap(r=>[r.name+" 基本分", r.name+" 加分", r.name+" 總分"]), "平均總分","已評委員數"];
+  const lines=[head];
+  CONFIG.cases.forEach(c=>{
+    const row=[c.id, c.title];
+    let subs=[], sum=0;
+    reviewers.forEach(r=>{
+      const rec=(all[r.username]&&all[r.username][c.id])||null;
+      if(rec&&rec.submitted){ const t=totalScore(rec); row.push(baseSum(rec),fmt(rec[CONFIG.bonus.key]||0),fmt(t)); subs.push(t); sum+=t; }
+      else row.push("","","");
+    });
+    row.push(subs.length?fmt(sum/subs.length):"", subs.length);
+    lines.push(row);
+  });
+  const csv="\uFEFF"+lines.map(l=>l.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="OSCE教案甄選分數_"+new Date().toISOString().slice(0,10)+".csv"; a.click();
+};
+</script>
+</body>
+</html>
