@@ -22,32 +22,54 @@
 
   /* ---------- LOGIN ---------- */
   #login{
-    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
-    background:radial-gradient(1200px 600px at 50% -10%,#16305f 0%,var(--navy) 55%,#070f23 100%);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:clamp(18px,4vw,42px);
+    background:
+      radial-gradient(circle at 18% 18%,rgba(83,177,255,.42) 0 18%,transparent 36%),
+      radial-gradient(circle at 82% 12%,rgba(243,146,32,.36) 0 16%,transparent 34%),
+      radial-gradient(circle at 50% 92%,rgba(99,102,241,.34) 0 20%,transparent 42%),
+      linear-gradient(135deg,#071126 0%,#0b1a3a 44%,#173d68 100%);
+    position:relative;overflow:hidden;
   }
+  #login::before,
+  #login::after{
+    content:"";position:absolute;border-radius:999px;filter:blur(2px);opacity:.7;pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.22);
+  }
+  #login::before{width:220px;height:220px;left:8%;bottom:10%;transform:rotate(18deg)}
+  #login::after{width:150px;height:150px;right:10%;top:14%;transform:rotate(-22deg)}
   .login-card{
-    width:100%;max-width:430px;background:var(--card);border-radius:18px;
-    box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden;
+    width:100%;max-width:430px;background:rgba(255,255,255,.18);border-radius:28px;
+    box-shadow:0 30px 90px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.38);
+    overflow:hidden;position:relative;z-index:1;border:1px solid rgba(255,255,255,.34);
+    backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
   }
-  .login-head{background:var(--navy);color:#fff;padding:30px 30px 26px;position:relative}
-  .login-head::after{content:"";position:absolute;left:0;bottom:0;width:100%;height:5px;background:var(--orange)}
-  .login-head .org{font-size:13px;letter-spacing:1px;opacity:.8;margin-bottom:8px}
-  .login-head h1{font-size:21px;line-height:1.45;font-weight:800}
-  .login-head .yr{color:var(--orange);font-weight:800}
-  .login-body{padding:28px 30px 30px}
+  .login-card::before{
+    content:"";position:absolute;inset:0;background:
+      linear-gradient(145deg,rgba(255,255,255,.42),rgba(255,255,255,.08) 45%,rgba(255,255,255,.18));
+    pointer-events:none;
+  }
+  .login-head{background:linear-gradient(135deg,rgba(11,26,58,.7),rgba(20,38,79,.38));color:#fff;padding:32px 30px 26px;position:relative}
+  .login-head::after{content:"";position:absolute;left:30px;right:30px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
+  .login-head .org{font-size:13px;letter-spacing:1px;opacity:.82;margin-bottom:8px;position:relative}
+  .login-head h1{font-size:clamp(20px,4.8vw,24px);line-height:1.45;font-weight:800;position:relative}
+  .login-head .yr{color:#ffd39a;font-weight:800;text-shadow:0 0 18px rgba(243,146,32,.38)}
+  .login-body{padding:28px 30px 32px;position:relative}
   .field{margin-bottom:16px}
-  .field label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:7px}
+  .field label{display:block;font-size:13px;font-weight:800;color:rgba(255,255,255,.88);margin-bottom:7px}
   .field input{
-    width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:11px;
-    font-size:15px;transition:.15s;background:#fafbfd;font-family:inherit;
+    width:100%;padding:14px 15px;border:1px solid rgba(255,255,255,.38);border-radius:15px;
+    font-size:15px;transition:.15s;background:rgba(255,255,255,.72);font-family:inherit;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5);
   }
-  .field input:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px rgba(243,146,32,.15)}
+  .field input:focus{outline:none;border-color:rgba(255,211,154,.9);background:rgba(255,255,255,.92);box-shadow:0 0 0 4px rgba(243,146,32,.22)}
   .btn-primary{
     width:100%;background:var(--orange);color:#fff;font-weight:800;font-size:16px;
-    padding:14px;border-radius:11px;transition:.15s;margin-top:6px;
+    padding:14px;border-radius:15px;transition:.15s;margin-top:6px;
+    box-shadow:0 16px 30px rgba(217,124,12,.28);
   }
-  .btn-primary:hover{background:var(--orange-d)}
-  .login-err{color:#d23b3b;font-size:13px;font-weight:700;margin-top:12px;text-align:center;min-height:18px}
+  .btn-primary:hover{background:var(--orange-d);transform:translateY(-1px)}
+  .login-err{color:#ffe1e1;font-size:13px;font-weight:700;margin-top:12px;text-align:center;min-height:18px;text-shadow:0 1px 8px rgba(0,0,0,.3)}
   .login-hint{margin-top:20px;border-top:1px dashed var(--line);padding-top:16px;font-size:12px;color:var(--muted);line-height:1.7}
   .login-hint b{color:var(--navy)}
 
@@ -200,6 +222,9 @@
   .note b{color:var(--orange-d)}
 
   @media(max-width:560px){
+    #login{align-items:flex-start;padding-top:8vh}
+    .login-card{max-width:100%;border-radius:24px}
+    .login-head,.login-body{padding-left:22px;padding-right:22px}
     .topbar .ttl small{display:none}
     .grid{grid-template-columns:1fr}
     .mf{flex-direction:column;align-items:stretch}
@@ -227,13 +252,7 @@
       </div>
       <button class="btn-primary" id="lg-btn">登　入</button>
       <div class="login-err" id="lg-err"></div>
-      <div class="login-hint">
-        <b>預設測試帳號（請上線前修改）：</b><br>
-        管理者　 admin / admin123<br>
-        委員一　 reviewer1 / chi001（柯雅婷 督導）<br>
-        委員二　 reviewer2 / chi002（劉韋呈 醫師）<br>
-        委員三　 reviewer3 / chi003（蔡長志 主任）
-      </div>
+
     </div>
   </div>
 </div>
@@ -276,14 +295,14 @@ const CONFIG = {
      例： "https://drive.google.com/file/d/1AbCdEfG.../view?usp=sharing"
      （該檔案共用權限需設為「知道連結的人皆可檢視」）。尚未取得連結前留 "#" 即可。 */
   cases: [
-    { id:1, title:"吞不下去好沮喪", unit:"復健部－語言治療", pdfUrl:"#" },
-    { id:2, title:"Flo-trac 血流動力學監測系統儀器操作及數據判讀", unit:"護理部－3BICU", pdfUrl:"#" },
-    { id:3, title:"非器質性聽力損失", unit:"耳鼻喉部－聽力", pdfUrl:"#" },
-    { id:4, title:"6 個月大男童，發燒 3 天，精神倦怠，由阿嬤送至急診", unit:"西醫－兒科部", pdfUrl:"#" },
-    { id:5, title:"使用 BiPAP 病人的評估與照護", unit:"急診室", pdfUrl:"#" },
-    { id:6, title:"齒源性頭頸部感染之診斷與切開引流", unit:"牙醫部", pdfUrl:"#" },
-    { id:7, title:"幽門桿菌糞便抗原快篩的操作與判讀", unit:"臨床病理部", pdfUrl:"#" },
-    { id:8, title:"異常陰道出血且長期月經不規則", unit:"婦產部", pdfUrl:"#" },
+    { id:1, title:"吞不下去好沮喪", unit:"復健部－語言治療", pdfUrl:"https://drive.google.com/file/d/1xfLGC1oPt1lV8xyTZLLkwHnV0yjNrKTz/view?usp=sharing" },
+    { id:2, title:"Flo-trac 血流動力學監測系統儀器操作及數據判讀", unit:"護理部－3BICU", pdfUrl:"https://drive.google.com/file/d/11vHt_0x3_U9XA0x3O_mPFuKSJ4RW3T4g/view?usp=sharing" },
+    { id:3, title:"非器質性聽力損失", unit:"耳鼻喉部－聽力", pdfUrl:"https://drive.google.com/file/d/16IbYDGAVXMKagTQ59JVa5agvEuQtokt7/view?usp=sharing" },
+    { id:4, title:"6 個月大男童，發燒 3 天，精神倦怠，由阿嬤送至急診", unit:"西醫－兒科部", pdfUrl:"https://drive.google.com/file/d/1VjZm_1_tH1oSifMZWkcslKd6jY3e9nOy/view?usp=sharing" },
+    { id:5, title:"使用 BiPAP 病人的評估與照護", unit:"急診室", pdfUrl:"https://drive.google.com/file/d/1Cj0aa13VRAnk3i_c8xZPelVKj4cLbW-i/view?usp=sharing" },
+    { id:6, title:"齒源性頭頸部感染之診斷與切開引流", unit:"牙醫部", pdfUrl:"https://drive.google.com/file/d/1wEnouE0j-uDU8gWYkDz4j0qP6RaZZ7NB/view?usp=sharing" },
+    { id:7, title:"幽門桿菌糞便抗原快篩的操作與判讀", unit:"臨床病理部", pdfUrl:"https://drive.google.com/file/d/1rnIJcDE4v-6w0oFrQbl8CtMp9KpflqkE/view?usp=sharing" },
+    { id:8, title:"異常陰道出血且長期月經不規則", unit:"婦產部", pdfUrl:"https://drive.google.com/file/d/1e3__Oq52Hiap2-EKmnHxvPrE7EWTzeWX/view?usp=sharing" },
   ],
 
   /* ---- 評分項目（依 Excel 甄選表，每項 10 分，合計 100 + 加分 10）---- */
