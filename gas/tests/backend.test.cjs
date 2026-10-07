@@ -175,3 +175,71 @@ test('錯誤試算表標記及破壞表頭均停止操作', () => {
   f.book.getSheetByName('評核資料').rows[0][3] = 'badColumn';
   assert.throws(() => f.login('reviewer1'), /欄位/);
 });
+
+function accountSettings(f, changes = {}) {
+  const values = { admin: 'test_manager', reviewer1: 'member_alpha', reviewer2: 'member_beta', reviewer3: 'member_gamma', ...changes };
+  for (const [alias, value] of Object.entries(values)) f.properties.set('ACCOUNT_' + alias.toUpperCase(), value);
+  return values;
+}
+
+test('設定帳密相同，遷移既有評分歸屬、保留其餘欄位，舊登入失效', () => {
+  const f = fixture(), oldToken = f.login('reviewer1').token;
+  f.context.dispatch_(score({ token: oldToken, comment: '=Comment with quotes " and text' }));
+  const before = f.book.getSheetByName('評核資料').rows[1].slice(1);
+  const values = accountSettings(f);
+  assert.equal(f.context.applyAccountCodesFromProperties(), 4);
+  assert.equal(f.book.getSheetByName('評核資料').rows[1][0], values.reviewer1);
+  assert.deepEqual(f.book.getSheetByName('評核資料').rows[1].slice(1), before);
+  assert.equal(f.properties.has('ACCOUNT_REVIEWER1'), false);
+  const result = f.context.dispatch_({ action: 'login', username: values.reviewer1, password: values.reviewer1 });
+  assert.equal(result.name, '柯雅婷 督導');
+  assert.equal(f.context.dispatch_({ action: 'load', token: result.token }).rows.length, 1);
+  raisesCode(() => f.context.dispatch_({ action: 'load', token: oldToken }), 'SESSION_EXPIRED');
+  for (const alias of ['admin', 'reviewer2', 'reviewer3']) {
+    assert.equal(f.context.dispatch_({ action: 'login', username: values[alias], password: values[alias] }).role, alias === 'admin' ? 'admin' : 'reviewer');
+  }
+  // 再次設定由姓名與角色定位，不能新增重複帳號或遺失評分。
+  accountSettings(f); f.context.applyAccountCodesFromProperties();
+  assert.equal(f.book.getSheetByName('評審帳號').getLastRow(), 5);
+  assert.equal(f.book.getSheetByName('評核資料').getLastRow(), 2);
+});
+
+test('支援四字元密碼及四字元帳密相同設定', () => {
+  const f = fixture();
+  f.properties.set('PASSWORD_ADMIN', 'four'); f.context.setPasswordsFromProperties();
+  assert.equal(f.context.dispatch_({ action: 'login', username: 'admin', password: 'four' }).role, 'admin');
+  accountSettings(f, { admin: 'root' }); f.context.applyAccountCodesFromProperties();
+  assert.equal(f.context.dispatch_({ action: 'login', username: 'root', password: 'root' }).role, 'admin');
+});
+
+test('帳號設定缺漏或重複時不改帳號、保留待處理屬性', () => {
+  const f = fixture(), sheet = f.book.getSheetByName('評審帳號');
+  const before = JSON.stringify(sheet.rows);
+  accountSettings(f); f.properties.delete('ACCOUNT_REVIEWER3');
+  assert.throws(() => f.context.applyAccountCodesFromProperties(), /ACCOUNT_REVIEWER3/);
+  assert.equal(JSON.stringify(sheet.rows), before);
+  accountSettings(f, { reviewer3: 'member_alpha' });
+  assert.throws(() => f.context.applyAccountCodesFromProperties(), /不可重複/);
+  assert.equal(JSON.stringify(sheet.rows), before);
+  assert.equal(f.properties.has('ACCOUNT_ADMIN'), true);
+});
+
+test('遷移寫入失敗時還原帳號及評分歸屬', () => {
+  const f = fixture(), token = f.login('reviewer1').token;
+  f.context.dispatch_(score({ token })); accountSettings(f);
+  const users = f.book.getSheetByName('評審帳號'), scores = f.book.getSheetByName('評核資料');
+  const beforeUsers = JSON.stringify(users.rows), beforeScores = JSON.stringify(scores.rows);
+  const getRange = scores.getRange.bind(scores); let failed = false;
+  scores.getRange = (...args) => {
+    const range = getRange(...args), setValues = range.setValues.bind(range);
+    range.setValues = values => {
+      if (!failed) { failed = true; throw new Error('Simulated write failure'); }
+      return setValues(values);
+    };
+    return range;
+  };
+  assert.throws(() => f.context.applyAccountCodesFromProperties(), /已還原/);
+  assert.equal(JSON.stringify(users.rows), beforeUsers);
+  assert.equal(JSON.stringify(scores.rows), beforeScores);
+  assert.equal(f.properties.has('ACCOUNT_ADMIN'), true);
+});

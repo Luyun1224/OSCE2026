@@ -58,8 +58,8 @@ function setPasswordsFromProperties() {
     for (let i=1;i<rows.length;i++) {
       const key = 'PASSWORD_'+String(rows[i][0]).toUpperCase();
       const password = props.getProperty(key);
-      if (password !== null && (password.length<8 || password.length>128)) {
-        throw new Error(key+' 須為 8–128 個字元。');
+      if (password !== null && (password.length<4 || password.length>128)) {
+        throw new Error(key+' 須為 4–128 個字元。');
       }
     }
     for (let i=1;i<rows.length;i++) {
@@ -75,6 +75,56 @@ function setPasswordsFromProperties() {
     console.log('已設定 '+count+' 位帳號的密碼；暫存密碼屬性已移除。');
     return count;
   } finally { lock.releaseLock(); }
+}
+
+/** 使用 ACCOUNT_ADMIN / ACCOUNT_REVIEWER1…3 四個指令碼屬性設定帳密相同。
+ * 屬性值是該位的新帳號，同時作為密碼。不可將正式值放入 GitHub 程式碼。
+ * 保留原有評分，將原 username 改為新帳號；完成後移除暫存屬性。
+ * reviewer1=柯雅婷、reviewer2=劉韋呈、reviewer3=蔡長志。 */
+function applyAccountCodesFromProperties() {
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
+  try {
+    const props=PropertiesService.getScriptProperties(), ss=spreadsheet_();
+    const users=ss.getSheetByName(OSCE.usersSheet), scores=ss.getSheetByName(OSCE.scoresSheet);
+    const oldUsers=users.getDataRange().getValues().slice(1);
+    const plans=OSCE.users.map(([alias,name,role])=>{
+      const key='ACCOUNT_'+alias.toUpperCase(), code=props.getProperty(key);
+      if(code===null||! /^[A-Za-z0-9_]{4,40}$/.test(code)) throw new Error('請填寫 '+key+'，帳號須為 4–40 位英數字或底線。');
+      const matches=oldUsers.map((r,i)=>({r:r,i:i})).filter(x=>String(x.r[1])===name&&String(x.r[2])===role);
+      if(matches.length!==1) throw new Error(name+' 的帳號列不存在或重複，尚未修改資料。');
+      const index=matches[0].i, previous=String(oldUsers[index][0]), salt=randomToken_();
+      return {key:key,username:code,index:index,previous:previous,salt:salt,hash:passwordHash_(code,salt,code)};
+    });
+    if(new Set(plans.map(p=>p.username)).size!==plans.length) throw new Error('各位帳號不可重複，尚未修改資料。');
+    const selected=new Set(plans.map(p=>p.index));
+    if(oldUsers.some((r,i)=>!selected.has(i)&&plans.some(p=>p.username===String(r[0])))) throw new Error('新帳號與其他既有帳號重複，尚未修改資料。');
+    if(new Set(oldUsers.map(r=>String(r[0]))).size!==oldUsers.length) throw new Error('既有帳號重複，尚未修改資料。');
+    const nextUsers=oldUsers.map(r=>r.slice()), renamed=new Map();
+    plans.forEach(p=>{nextUsers[p.index]=[p.username,oldUsers[p.index][1],oldUsers[p.index][2],p.salt,p.hash,true];renamed.set(p.previous,p.username);});
+    const count=scores.getLastRow()-1;
+    const oldOwners=count>0?scores.getRange(2,1,count,1).getValues():[];
+    const nextOwners=oldOwners.map(([u])=>[renamed.get(String(u))||u]);
+    try {
+      users.getRange(2,1,nextUsers.length,6).setValues(nextUsers);
+      if(count>0)scores.getRange(2,1,count,1).setValues(nextOwners);
+      SpreadsheetApp.flush();
+    } catch(error) {
+      // 寫入失敗時保留暫存設定，盡可能還原原帳號及評分歸屬。
+      try {
+        users.getRange(2,1,oldUsers.length,6).setValues(oldUsers);
+        if(count>0)scores.getRange(2,1,count,1).setValues(oldOwners);
+        SpreadsheetApp.flush();
+      } catch(restoreError) {throw new Error('帳號設定及還原未完成，請檢查評審帳號與評核資料後再操作。');}
+      throw new Error('帳號設定未完成，已還原原有帳號及評核資料。');
+    }
+    plans.forEach(p=>{
+      props.deleteProperty(p.key);
+      CacheService.getScriptCache().remove('fail:'+p.previous);
+      CacheService.getScriptCache().remove('fail:'+p.username);
+    });
+    console.log('已更新四位帳號並啟用；既有評分已保留，暫存帳密屬性已移除。');
+    return plans.length;
+  } finally {lock.releaseLock();}
 }
 
 /** GET 僅為狀態檢查，不接受登入／修改評分。 */
